@@ -12,66 +12,19 @@ need_frame   = False
 
 # ───────── HTML dashboard ─────────
 HTML = """
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BUBT VTS+ Snapshot Viewer</title>
-  <style>
-    body {
-      background: #111;
-      color: #eee;
-      text-align: center;
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    button {
-      padding: 0.6em 1.4em;
-      font-size: 1.1em;
-      margin-top: 10px;
-      background: #222;
-      color: #fff;
-      border: 1px solid #444;
-      cursor: pointer;
-    }
-    img {
-      max-width: 96%;
-      border: 2px solid #666;
-      margin-top: 12px;
-    }
-    .credits {
-      font-size: 14px;
-      color: #ccc;
-      margin-top: 20px;
-    }
-  </style>
-  <script>
-    const token = 'changeme'; // replace this dynamically if templated
-
-    function ask() {
-      fetch('/request?token=' + token)
-        .then(() => {
-          document.getElementById('img').src = '/latest?' + Date.now();
-        });
-    }
-
-    // If you want polling instead of manual button:
-    // setInterval(() => ask(), 100);
-  </script>
-</head>
-<body>
-  <h2>BUBT VTS+ Snapshot Dashboard</h2>
-  <button onclick="ask()">📸 Update Frame</button><br>
-  <img id="img" src="/latest"><br>
-
-  <div class="credits">
-    🛠 Developed by<br>
-    👨‍💻 Rakib Hasan  👨‍💻 Sahadat Sani  👨‍🔬 A B M Shawkat Ali
-  </div>
-</body>
-</html>
+<!doctype html><html><head><meta charset='utf-8'>
+<title>ESP32 Snapshot Dashboard</title>
+<style>body{background:#111;color:#eee;text-align:center;font-family:sans-serif}
+button{padding:.6em 1.4em;font-size:1.1em;margin-top:8px}
+img{max-width:96%;border:2px solid #666;margin-top:10px}</style>
+<script>
+function ask(){fetch('/request?token={{flag}}')}
+setInterval(()=>{document.getElementById('img').src='/latest?'+Date.now()},200);
+</script></head><body>
+<h2>ESP32 Snapshot (pull-to-refresh)</h2>
+<button onclick="ask()">Update Frame</button><br>
+<img id="img" src="/latest"><br>
+</body></html>
 """
 
 # ESP → POST /upload  (JPEG)
