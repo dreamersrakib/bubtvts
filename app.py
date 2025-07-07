@@ -19,7 +19,7 @@ button{padding:.6em 1.4em;font-size:1.1em;margin-top:8px}
 img{max-width:96%;border:2px solid #666;margin-top:10px}</style>
 <script>
 function ask(){fetch('/request?token={{flag}}')}
-setInterval(()=>{document.getElementById('img').src='/latest?'+Date.now()},1000);
+setInterval(()=>{document.getElementById('img').src='/latest?'+Date.now()},250);
 </script></head><body>
 <h2>ESP32 Snapshot (pull-to-refresh)</h2>
 <button onclick="ask()">Update Frame</button><br>
