@@ -416,6 +416,18 @@ HTML = """
         function selectBus(busName) {
             if (busName === currentBus) return; // Already selected
             
+            // Immediately clear the old image when switching cameras
+            const img = document.getElementById('camera-img');
+            const placeholder = document.getElementById('noImagePlaceholder');
+            img.style.display = 'none';
+            img.src = '';
+            placeholder.style.display = 'flex';
+            
+            // Update status immediately
+            const statusIndicator = document.getElementById('statusIndicator');
+            statusIndicator.textContent = '🟡 SWITCHING';
+            statusIndicator.className = 'status-indicator status-offline';
+            
             currentBus = busName;
             document.getElementById('currentBusDebug').textContent = currentBus;
             
@@ -435,7 +447,11 @@ HTML = """
                 // Show success notification
                 showNotification(`${busName} camera activated!`, 'success');
                 document.getElementById('firebaseStatus').textContent = 'Connected';
-                document.getElementById('cameraStatus').textContent = `${busName} Active`;
+                document.getElementById('cameraStatus').textContent = `${busName} - Waiting for Feed`;
+                
+                // Update status to waiting
+                statusIndicator.textContent = '🟡 WAITING';
+                statusIndicator.className = 'status-indicator status-offline';
             })
             .catch(error => {
                 console.error('❌ Error selecting bus:', error);
@@ -622,7 +638,7 @@ HTML = """
         }, 300);
         
         // Update bus status every 3 seconds
-        setInterval(updateBusStatus, 1000);
+        setInterval(updateBusStatus, 3000);
         
         // Initialize
         updateBusStatus();
@@ -673,8 +689,12 @@ def select_bus():
     if selected_bus not in bus_states:
         abort(400, "Invalid bus")
     
-    global current_bus
+    global current_bus, latest_jpeg
     current_bus = selected_bus
+    
+    # Clear the old image when switching cameras
+    with latest_lock:
+        latest_jpeg = b""
     
     # Set all buses to 0, then set selected bus to 1
     for bus in bus_states:
@@ -694,6 +714,7 @@ def select_bus():
             print(f"✅ Firebase: {path} = {cam_value}")
     
     print(f"🚌 Bus {selected_bus} camera activated, others deactivated")
+    print("🗑️  Previous camera footage cleared")
     print("📊 Current bus states:", bus_states)
     
     if firebase_success:
