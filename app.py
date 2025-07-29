@@ -182,7 +182,7 @@ HTML = """
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            background: linear-gradient(270deg, transparent, rgba(255, 255, 255, 0.6), transparent);
             transform: translateX(-100%);
             transition: transform 0.6s ease;
         }
