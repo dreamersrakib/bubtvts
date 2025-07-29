@@ -58,7 +58,7 @@ HTML = """
 <head>
     <meta charset='utf-8'>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Bus Camera Control</title>
+    <title>BUBT VTS Camera Control</title>
     <style>
         * {
             margin: 0;
@@ -317,7 +317,7 @@ HTML = """
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚌 ESP32 Bus Camera Control</h1>
+            <h1>🚌 BUBT VTS Camera Control</h1>
             <p>Select a bus to activate its camera feed</p>
             <div class="firebase-status">
                 🔥 Connected to Firebase: smarthome-78a97-default-rtdb.asia-southeast1.firebasedatabase.app
