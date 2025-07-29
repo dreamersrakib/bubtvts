@@ -202,7 +202,7 @@ HTML = """
             max-width: 100%;
             max-height: 500px;
             border-radius: 10px;
-            transform: rotate(90deg); /* Rotate the camera image */
+            transform: rotate(270deg); /* Rotate the camera image */
             transition: all 0.3s ease;
         }
         
