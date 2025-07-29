@@ -622,7 +622,7 @@ HTML = """
         }, 300);
         
         // Update bus status every 3 seconds
-        setInterval(updateBusStatus, 3000);
+        setInterval(updateBusStatus, 1000);
         
         // Initialize
         updateBusStatus();
