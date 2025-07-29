@@ -202,7 +202,7 @@ HTML = """
             max-width: 100%;
             max-height: 500px;
             border-radius: 10px;
-            transform: rotate(180deg); /* Rotate the camera image */
+            transform: rotate(90deg); /* Rotate the camera image */
             transition: all 0.3s ease;
         }
         
@@ -503,10 +503,10 @@ HTML = """
         }
         
         // Auto-refresh image every 300ms
-        imageUpdateInterval = setInterval(updateCameraImage, 100);
+        imageUpdateInterval = setInterval(updateCameraImage, 300);
         
         // Update bus status every 3 seconds
-        setInterval(updateBusStatus, 300);
+        setInterval(updateBusStatus, 3000);
         
         // Initialize
         updateBusStatus();
