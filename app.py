@@ -506,7 +506,7 @@ HTML = """
             .then(() => {
                 setTimeout(() => {
                     document.getElementById('loading').style.display = 'none';
-                }, 3000);
+                }, 1000);
             })
             .catch(error => {
                 console.error('Error requesting frame:', error);
@@ -638,7 +638,7 @@ HTML = """
         }, 300);
         
         // Update bus status every 3 seconds
-        setInterval(updateBusStatus, 1000);
+        setInterval(updateBusStatus, 3000);
         
         // Initialize
         updateBusStatus();
@@ -689,12 +689,8 @@ def select_bus():
     if selected_bus not in bus_states:
         abort(400, "Invalid bus")
     
-    global current_bus, latest_jpeg
+    global current_bus
     current_bus = selected_bus
-    
-    # Clear the old image when switching cameras
-    with latest_lock:
-        latest_jpeg = b""
     
     # Set all buses to 0, then set selected bus to 1
     for bus in bus_states:
@@ -714,7 +710,6 @@ def select_bus():
             print(f"✅ Firebase: {path} = {cam_value}")
     
     print(f"🚌 Bus {selected_bus} camera activated, others deactivated")
-    print("🗑️  Previous camera footage cleared")
     print("📊 Current bus states:", bus_states)
     
     if firebase_success:
