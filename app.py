@@ -331,11 +331,50 @@ HTML = """
         .debug-info {
             margin-top: 20px;
             padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.7);
             border-radius: 10px;
-            font-family: monospace;
-            font-size: 0.8em;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
             text-align: left;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            min-width: 300px;
+            max-width: 400px;
+            cursor: move;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            user-select: none;
+        }
+        
+        .debug-header {
+            background: rgba(255, 255, 255, 0.1);
+            margin: -15px -15px 10px -15px;
+            padding: 10px 15px;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+        
+        .debug-toggle {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0;
+        }
+        
+        .debug-content {
+            line-height: 1.4;
+        }
+        
+        .debug-info.minimized .debug-content {
+            display: none;
         }
         
         @media (max-width: 768px) {
@@ -399,11 +438,18 @@ HTML = """
         </div>
         
         <div class="debug-info" id="debugInfo">
-            <strong>Debug Info:</strong><br>
-            Last Update: <span id="lastUpdate">Never</span><br>
-            Camera Status: <span id="cameraStatus">No Camera Selected</span><br>
-            Firebase Status: <span id="firebaseStatus">Unknown</span><br>
-            Current Bus: <span id="currentBusDebug">None</span>
+            <div class="debug-header">
+                <span>🐛 Debug Panel</span>
+                <button class="debug-toggle" onclick="toggleDebug()">−</button>
+            </div>
+            <div class="debug-content">
+                <strong>System Status:</strong><br>
+                Last Update: <span id="lastUpdate">Never</span><br>
+                Camera Status: <span id="cameraStatus">No Camera Selected</span><br>
+                Firebase Status: <span id="firebaseStatus">Unknown</span><br>
+                Current Bus: <span id="currentBusDebug">None</span><br>
+                Image Cache: <span id="imageCacheStatus">Empty</span>
+            </div>
         </div>
     </div>
 
@@ -420,8 +466,12 @@ HTML = """
             const img = document.getElementById('camera-img');
             const placeholder = document.getElementById('noImagePlaceholder');
             img.style.display = 'none';
-            img.src = '';
+            img.src = ''; // Clear the src completely
+            img.removeAttribute('src'); // Remove src attribute
             placeholder.style.display = 'flex';
+            
+            // Clear any cached image data
+            document.getElementById('imageCacheStatus').textContent = 'Cleared for switch';
             
             // Update status immediately
             const statusIndicator = document.getElementById('statusIndicator');
@@ -565,16 +615,20 @@ HTML = """
             const statusIndicator = document.getElementById('statusIndicator');
             const timestamp = Date.now();
             
+            // Force cache busting with random parameter
+            const cacheBuster = `${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+            
             // Create a temporary image to test if new frame is available
             const testImg = new Image();
             testImg.onload = function() {
                 // Image loaded successfully
-                img.src = `/latest?${timestamp}`;
+                img.src = `/latest?v=${cacheBuster}`;
                 img.style.display = 'block';
                 placeholder.style.display = 'none';
                 lastImageUpdate = timestamp;
                 document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
                 document.getElementById('cameraStatus').textContent = `${currentBus} - Live`;
+                document.getElementById('imageCacheStatus').textContent = `Fresh (${cacheBuster.split('_')[1]})`;
                 statusIndicator.textContent = '🟢 LIVE';
                 statusIndicator.className = 'status-indicator status-live';
             };
@@ -584,11 +638,12 @@ HTML = """
                     img.style.display = 'none';
                     placeholder.style.display = 'flex';
                     document.getElementById('cameraStatus').textContent = `${currentBus} - Waiting for Feed`;
+                    document.getElementById('imageCacheStatus').textContent = 'No Image Available';
                     statusIndicator.textContent = '🟡 WAITING';
                     statusIndicator.className = 'status-indicator status-offline';
                 }
             };
-            testImg.src = `/latest?${timestamp}`;
+            testImg.src = `/latest?v=${cacheBuster}`;
         }
         
         function handleImageError() {
@@ -627,21 +682,55 @@ HTML = """
             setTimeout(() => {
                 notification.style.transform = 'translateX(300px)';
                 setTimeout(() => document.body.removeChild(notification), 300);
-            }, 3000);
+            }, 1000);
         }
         
-        // Auto-refresh image every 300ms only if camera is active
-        imageUpdateInterval = setInterval(() => {
-            if (hasActiveCamera) {
-                updateCameraImage();
-            }
-        }, 300);
+        // Add dragging functionality for debug panel
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
         
-        // Update bus status every 3 seconds
-        setInterval(updateBusStatus, 3000);
+        function toggleDebug() {
+            const debugInfo = document.getElementById('debugInfo');
+            const toggleBtn = document.querySelector('.debug-toggle');
+            debugInfo.classList.toggle('minimized');
+            toggleBtn.textContent = debugInfo.classList.contains('minimized') ? '+' : '−';
+        }
         
-        // Initialize
-        updateBusStatus();
+        function makeDraggable() {
+            const debugInfo = document.getElementById('debugInfo');
+            const debugHeader = document.querySelector('.debug-header');
+            
+            debugHeader.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                const rect = debugInfo.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                debugInfo.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const x = e.clientX - dragOffset.x;
+                const y = e.clientY - dragOffset.y;
+                
+                // Keep within viewport bounds
+                const maxX = window.innerWidth - debugInfo.offsetWidth;
+                const maxY = window.innerHeight - debugInfo.offsetHeight;
+                
+                debugInfo.style.left = Math.max(0, Math.min(x, maxX)) + 'px';
+                debugInfo.style.top = Math.max(0, Math.min(y, maxY)) + 'px';
+                debugInfo.style.bottom = 'auto';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    debugInfo.style.cursor = 'move';
+                }
+            });
+        }
     </script>
 </body>
 </html>
