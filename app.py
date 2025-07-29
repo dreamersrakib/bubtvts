@@ -506,7 +506,7 @@ HTML = """
             .then(() => {
                 setTimeout(() => {
                     document.getElementById('loading').style.display = 'none';
-                }, 1000);
+                }, 3000);
             })
             .catch(error => {
                 console.error('Error requesting frame:', error);
@@ -627,7 +627,7 @@ HTML = """
             setTimeout(() => {
                 notification.style.transform = 'translateX(300px)';
                 setTimeout(() => document.body.removeChild(notification), 300);
-            }, 1000);
+            }, 3000);
         }
         
         // Auto-refresh image every 300ms only if camera is active
