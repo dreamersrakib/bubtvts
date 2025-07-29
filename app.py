@@ -627,7 +627,7 @@ HTML = """
             setTimeout(() => {
                 notification.style.transform = 'translateX(300px)';
                 setTimeout(() => document.body.removeChild(notification), 300);
-            }, 3000);
+            }, 1000);
         }
         
         // Auto-refresh image every 300ms only if camera is active
@@ -638,7 +638,7 @@ HTML = """
         }, 300);
         
         // Update bus status every 3 seconds
-        setInterval(updateBusStatus, 3000);
+        setInterval(updateBusStatus, 1000);
         
         // Initialize
         updateBusStatus();
