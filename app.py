@@ -503,10 +503,10 @@ HTML = """
         }
         
         // Auto-refresh image every 300ms
-        imageUpdateInterval = setInterval(updateCameraImage, 300);
+        imageUpdateInterval = setInterval(updateCameraImage, 100);
         
         // Update bus status every 3 seconds
-        setInterval(updateBusStatus, 3000);
+        setInterval(updateBusStatus, 300);
         
         // Initialize
         updateBusStatus();
