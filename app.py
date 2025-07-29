@@ -258,7 +258,7 @@ HTML = """
             height: 100%;
             object-fit: cover;
             border-radius: 10px;
-            transform: rotate(270deg);
+            transform: rotate(0deg);
             transition: all 0.3s ease;
             background: #2c3e50;
         }
