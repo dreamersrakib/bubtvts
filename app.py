@@ -16,16 +16,28 @@ FLAG_TOKEN   = os.getenv("FLAG_TOKEN",   "changeme")  # dashboard & ESP → /fla
 latest_lock  = threading.Lock()
 latest_jpeg  = b""
 need_frame   = False
-current_bus  = "Bus1"  # Default selected bus
+current_bus  = "Meghna"  # Default selected bus (updated name)
 
-# Bus control data
+# Bus control data with river names
 bus_states = {
-    "Bus1": {"cam": 0},
-    "Bus2": {"cam": 0},
-    "Bus3": {"cam": 0},
-    "Bus4": {"cam": 0},
-    "Bus5": {"cam": 0}
+    "Meghna": {"cam": 0},
+    "Padma": {"cam": 0},
+    "Jamuna": {"cam": 0},
+    "Brahmaputra": {"cam": 0},
+    "Buriganga": {"cam": 0}
 }
+
+# Bus mapping for internal use (if needed for ESP32 compatibility)
+bus_mapping = {
+    "Meghna": "Bus1",
+    "Padma": "Bus2", 
+    "Jamuna": "Bus3",
+    "Brahmaputra": "Bus4",
+    "Buriganga": "Bus5"
+}
+
+# Reverse mapping
+reverse_bus_mapping = {v: k for k, v in bus_mapping.items()}
 
 # Firebase helper functions
 def write_to_firebase(path, data):
@@ -258,9 +270,20 @@ HTML = """
             height: 100%;
             object-fit: cover;
             border-radius: 10px;
-            transform: rotate(90deg);
             transition: all 0.3s ease;
             background: #2c3e50;
+        }
+        
+        /* Different rotations for different buses */
+        #camera-img.bus-meghna {
+            transform: rotate(90deg);
+        }
+        
+        #camera-img.bus-padma,
+        #camera-img.bus-jamuna,
+        #camera-img.bus-brahmaputra,
+        #camera-img.bus-buriganga {
+            transform: rotate(270deg);
         }
         
         .no-image {
@@ -431,6 +454,9 @@ HTML = """
             currentBus = busName;
             document.getElementById('currentBusDebug').textContent = currentBus;
             
+            // Update image class for proper rotation
+            updateImageRotation(busName);
+            
             // Show loading
             document.getElementById('loading').style.display = 'block';
             
@@ -463,6 +489,17 @@ HTML = """
             });
         }
         
+        function updateImageRotation(busName) {
+            const img = document.getElementById('camera-img');
+            // Remove all bus classes
+            img.className = img.className.replace(/bus-\w+/g, '');
+            // Add the appropriate bus class for rotation
+            if (busName) {
+                const busClass = 'bus-' + busName.toLowerCase();
+                img.className += ' ' + busClass;
+            }
+        }
+        
         function deactivateAllCameras() {
             currentBus = null;
             hasActiveCamera = false;
@@ -473,6 +510,9 @@ HTML = """
             img.style.display = 'none';
             img.src = '';
             placeholder.style.display = 'flex';
+            
+            // Remove rotation classes
+            updateImageRotation(null);
             
             // Update status
             const statusIndicator = document.getElementById('statusIndicator');
@@ -548,6 +588,7 @@ HTML = """
                     img.style.display = 'none';
                     img.src = '';
                     placeholder.style.display = 'flex';
+                    updateImageRotation(null);
                     currentBus = null;
                 }
             })
@@ -577,6 +618,9 @@ HTML = """
                 document.getElementById('cameraStatus').textContent = `${currentBus} - Live`;
                 statusIndicator.textContent = '🟢 LIVE';
                 statusIndicator.className = 'status-indicator status-live';
+                
+                // Ensure proper rotation is applied
+                updateImageRotation(currentBus);
             };
             testImg.onerror = function() {
                 // No image available but camera is active
@@ -697,11 +741,13 @@ def select_bus():
         bus_states[bus]["cam"] = 0
     bus_states[selected_bus]["cam"] = 1
     
-    # Write to Firebase - Set all buses to 0 first, then selected bus to 1
+    # Write to Firebase using the original Bus1-5 naming for ESP32 compatibility
     firebase_success = True
-    for bus in bus_states:
-        cam_value = "1" if bus == selected_bus else "0"  # Firebase expects strings
-        path = f"{bus}/cam"
+    for bus_name in bus_states:
+        # Convert river name to Bus number for Firebase
+        firebase_bus = bus_mapping[bus_name]
+        cam_value = "1" if bus_name == selected_bus else "0"  # Firebase expects strings
+        path = f"{firebase_bus}/cam"
         success = write_to_firebase(path, cam_value)
         if not success:
             firebase_success = False
@@ -734,10 +780,11 @@ def deactivate_all():
     with latest_lock:
         latest_jpeg = b""
     
-    # Write to Firebase - Set all buses to 0
+    # Write to Firebase using original Bus1-5 naming
     firebase_success = True
-    for bus in bus_states:
-        path = f"{bus}/cam"
+    for bus_name in bus_states:
+        firebase_bus = bus_mapping[bus_name]
+        path = f"{firebase_bus}/cam"
         success = write_to_firebase(path, "0")
         if not success:
             firebase_success = False
@@ -761,11 +808,12 @@ def get_bus_status():
     
     # Optionally sync with Firebase to get real-time status
     try:
-        for bus in bus_states:
-            firebase_value = read_from_firebase(f"{bus}/cam")
+        for bus_name in bus_states:
+            firebase_bus = bus_mapping[bus_name]
+            firebase_value = read_from_firebase(f"{firebase_bus}/cam")
             if firebase_value is not None:
                 # Convert Firebase string to integer
-                bus_states[bus]["cam"] = 1 if firebase_value == "1" else 0
+                bus_states[bus_name]["cam"] = 1 if firebase_value == "1" else 0
     except Exception as e:
         print(f"❌ Error syncing with Firebase: {e}")
     
@@ -793,11 +841,12 @@ def debug():
         "firebase_url": FIREBASE_URL,
         "current_bus": current_bus,
         "bus_states": bus_states,
+        "bus_mapping": bus_mapping,
         "has_image": len(latest_jpeg) > 0,
         "image_size": len(latest_jpeg)
     }
     return debug_info, 200
-
+    
 if __name__ == "__main__":
     # Don't initialize any bus as active on startup - let user choose
     for i in range(1, 6):
