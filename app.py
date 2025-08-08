@@ -151,6 +151,57 @@ HTML = """
             transform: translateY(-1px);
         }
         
+        .rotate-btn {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .rotate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(155, 89, 182, 0.6);
+        }
+        
+        .rotate-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .rotate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .rotate-btn:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .rotation-display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .bus-status {
             margin-bottom: 30px;
             display: grid;
@@ -274,15 +325,20 @@ HTML = """
             background: #2c3e50;
         }
         
-        /* Different rotations for different buses */
-        #camera-img.bus-meghna {
+        /* Manual rotation classes */
+        #camera-img.rotate-0 {
+            transform: rotate(0deg);
+        }
+        
+        #camera-img.rotate-90 {
             transform: rotate(90deg);
         }
         
-        #camera-img.bus-padma,
-        #camera-img.bus-jamuna,
-        #camera-img.bus-brahmaputra,
-        #camera-img.bus-buriganga {
+        #camera-img.rotate-180 {
+            transform: rotate(180deg);
+        }
+        
+        #camera-img.rotate-270 {
             transform: rotate(270deg);
         }
         
@@ -403,6 +459,12 @@ HTML = """
             <button class="update-btn" onclick="requestFrame()">
                 📸 Force Update
             </button>
+            <button class="rotate-btn" onclick="rotateImage()">
+                🔄 Rotate
+            </button>
+            <div class="rotation-display">
+                🧭 <span id="rotationAngle">0°</span>
+            </div>
         </div>
         
         <div class="camera-container">
@@ -426,7 +488,8 @@ HTML = """
             Last Update: <span id="lastUpdate">Never</span><br>
             Camera Status: <span id="cameraStatus">No Camera Selected</span><br>
             Firebase Status: <span id="firebaseStatus">Unknown</span><br>
-            Current Bus: <span id="currentBusDebug">None</span>
+            Current Bus: <span id="currentBusDebug">None</span><br>
+            Current Rotation: <span id="currentRotationDebug">0°</span>
         </div>
     </div>
 
@@ -435,6 +498,7 @@ HTML = """
         let lastImageUpdate = 0;
         let imageUpdateInterval;
         let hasActiveCamera = false;
+        let currentRotation = 0; // 0, 90, 180, 270
         
         function selectBus(busName) {
             if (busName === currentBus) return; // Already selected
@@ -454,8 +518,8 @@ HTML = """
             currentBus = busName;
             document.getElementById('currentBusDebug').textContent = currentBus;
             
-            // Update image class for proper rotation
-            updateImageRotation(busName);
+            // Apply current rotation to new image
+            updateImageRotation();
             
             // Show loading
             document.getElementById('loading').style.display = 'block';
@@ -489,15 +553,34 @@ HTML = """
             });
         }
         
-        function updateImageRotation(busName) {
+        function updateImageRotation() {
             const img = document.getElementById('camera-img');
-            // Remove all bus classes
-            img.className = img.className.replace(/bus-\w+/g, '');
-            // Add the appropriate bus class for rotation
-            if (busName) {
-                const busClass = 'bus-' + busName.toLowerCase();
-                img.className += ' ' + busClass;
+            // Remove all rotation classes
+            img.className = img.className.replace(/rotate-\d+/g, '');
+            // Add the current rotation class
+            img.className += ` rotate-${currentRotation}`;
+        }
+        
+        function rotateImage() {
+            if (!hasActiveCamera) {
+                showNotification('Please select a bus first!', 'error');
+                return;
             }
+            
+            // Cycle through rotations: 0 -> 90 -> 180 -> 270 -> 0
+            currentRotation = (currentRotation + 90) % 360;
+            
+            // Update the image rotation
+            updateImageRotation();
+            
+            // Update the display
+            document.getElementById('rotationAngle').textContent = `${currentRotation}°`;
+            document.getElementById('currentRotationDebug').textContent = `${currentRotation}°`;
+            
+            // Show notification
+            showNotification(`Rotated to ${currentRotation}°`, 'success');
+            
+            console.log(`🔄 Image rotated to ${currentRotation}°`);
         }
         
         function deactivateAllCameras() {
@@ -511,8 +594,11 @@ HTML = """
             img.src = '';
             placeholder.style.display = 'flex';
             
-            // Remove rotation classes
-            updateImageRotation(null);
+            // Reset rotation to 0
+            currentRotation = 0;
+            updateImageRotation();
+            document.getElementById('rotationAngle').textContent = '0°';
+            document.getElementById('currentRotationDebug').textContent = '0°';
             
             // Update status
             const statusIndicator = document.getElementById('statusIndicator');
@@ -588,7 +674,13 @@ HTML = """
                     img.style.display = 'none';
                     img.src = '';
                     placeholder.style.display = 'flex';
-                    updateImageRotation(null);
+                    
+                    // Reset rotation
+                    currentRotation = 0;
+                    updateImageRotation();
+                    document.getElementById('rotationAngle').textContent = '0°';
+                    document.getElementById('currentRotationDebug').textContent = '0°';
+                    
                     currentBus = null;
                 }
             })
@@ -620,7 +712,7 @@ HTML = """
                 statusIndicator.className = 'status-indicator status-live';
                 
                 // Ensure proper rotation is applied
-                updateImageRotation(currentBus);
+                updateImageRotation();
             };
             testImg.onerror = function() {
                 // No image available but camera is active
@@ -683,6 +775,10 @@ HTML = """
         
         // Update bus status every 3 seconds
         setInterval(updateBusStatus, 3000);
+        
+        // Initialize rotation display
+        document.getElementById('rotationAngle').textContent = `${currentRotation}°`;
+        document.getElementById('currentRotationDebug').textContent = `${currentRotation}°`;
         
         // Initialize
         updateBusStatus();
